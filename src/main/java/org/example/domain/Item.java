@@ -1,6 +1,8 @@
 package org.example.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 
 /**
  * Represents a retro game item available in the marketplace.
@@ -16,11 +18,18 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "itemName is required")
     private String itemName;
+
     private String console;
     private String genre;
+
+    @PositiveOrZero(message = "stockLevel must be >= 0")
     private Integer stockLevel;
+
+    @PositiveOrZero(message = "price must be >= 0")
     private Double price;
+
     private Boolean inStock;
     private Boolean onSale;
 
@@ -82,12 +91,10 @@ public class Item {
         this.price = price;
     }
 
+    /** Derived: true when stockLevel is greater than zero. Never stored separately. */
+    @Transient
     public Boolean getInStock() {
-        return inStock;
-    }
-
-    public void setInStock(Boolean inStock) {
-        this.inStock = inStock;
+        return stockLevel != null && stockLevel > 0;
     }
 
     public Boolean getOnSale() {

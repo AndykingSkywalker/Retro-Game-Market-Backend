@@ -2,64 +2,57 @@ package org.example.rest;
 
 import java.util.List;
 
-import org.example.domain.User;
+import jakarta.validation.Valid;
+import org.example.rest.dto.UserCreateRequestDto;
+import org.example.rest.dto.UserResponseDto;
+import org.example.rest.dto.UserUpdateRequestDto;
 import org.example.service.UserServices;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for User endpoints.
- * Base path: /api/user
+ * Base path: /api/users
  */
 @RestController
 @CrossOrigin
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class UserController {
-
-    // ── Dependencies ──────────────────────────────────────────────────────────
 
     private final UserServices service;
 
     public UserController(UserServices service) {
-        super();
         this.service = service;
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────
-
-    /** POST /api/user/create - Registers a new user. */
-    @PostMapping("/create")
-    public ResponseEntity<User> createUser(@RequestBody User newUser) {
+    /** POST /api/users - Registers a new user. */
+    @PostMapping
+    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateRequestDto newUser) {
         return this.service.createUser(newUser);
     }
 
-    // ── Read ──────────────────────────────────────────────────────────────────
-
-    /** GET /api/user/get - Returns all users. */
-    @GetMapping("/get")
-    public List<User> getUsers() {
+    /** GET /api/users - Returns all users. */
+    @GetMapping
+    public List<UserResponseDto> getUsers() {
         return this.service.getUsers();
     }
 
-    /** GET /api/user/get/{id} - Returns a single user by ID. */
-    @GetMapping("/get/{id}")
-    public ResponseEntity<User> getUser(@PathVariable int id) {
+    /** GET /api/users/{id} - Returns a single user by ID. */
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDto> getUser(@PathVariable int id) {
         return this.service.getUser(id);
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
-    /** PUT /api/user/update/{id} - Partially updates a user by ID. */
-    @PutMapping("/update/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User userDetails) {
+    /** PUT /api/users/{id} - Partially updates a user by ID. */
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable int id, @Valid @RequestBody UserUpdateRequestDto userDetails) {
         return this.service.updateUser(id, userDetails);
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
-
-    /** DELETE /api/user/delete/{id} - Deletes a user by ID. */
-    @DeleteMapping("/delete/{id}")
+    /** DELETE /api/users/{id} - Deletes a user by ID. */
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable int id) {
         return this.service.deleteUser(id);
     }
+
 }

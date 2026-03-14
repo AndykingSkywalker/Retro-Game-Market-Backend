@@ -73,14 +73,11 @@ public class ItemServices {
         if (itemDetails.getGenre() != null) {
             exists.setGenre(itemDetails.getGenre());
         }
-        if (itemDetails.getStockLevel() != null && itemDetails.getStockLevel() != 0) {
+        if (itemDetails.getStockLevel() != null) {
             exists.setStockLevel(itemDetails.getStockLevel());
         }
-        if (itemDetails.getPrice() != null && itemDetails.getPrice() != 0) {
+        if (itemDetails.getPrice() != null) {
             exists.setPrice(itemDetails.getPrice());
-        }
-        if (itemDetails.getInStock() != null) {
-            exists.setInStock(itemDetails.getInStock());
         }
         if (itemDetails.getOnSale() != null) {
             exists.setOnSale(itemDetails.getOnSale());

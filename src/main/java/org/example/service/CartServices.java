@@ -1,7 +1,9 @@
 package org.example.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.example.domain.Cart;
 import org.example.domain.Item;
@@ -9,8 +11,14 @@ import org.example.domain.User;
 import org.example.repo.CartRepo;
 import org.example.repo.ItemRepo;
 import org.example.repo.UserRepo;
+import org.example.rest.dto.CartItemSummaryDto;
+import org.example.rest.dto.UserCartSummaryDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.springframework.http.HttpStatus.*;
 
 /**
  * Service layer for Cart operations.
@@ -37,52 +45,107 @@ public class CartServices {
     /**
      * Adds an item to a user's cart.
      * If the user already has a cart entry for that item, the quantity is incremented.
-     * Otherwise a new cart entry is created with quantity = 1.
-     * Returns 404 if the user or item does not exist.
+     * Otherwise a new cart entry is created.
+     * Returns the full updated cart summary for the user.
      */
-    public ResponseEntity<Cart> addItemToCart(int userId, int itemId) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        Item item = itemRepo.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
-
-        Optional<Cart> existing = cartRepo.findByUserId(userId)
-                .stream()
-                .filter(c -> c.getItems().getId().equals(itemId))
-                .findFirst();
-
-        Cart cart;
-        if (existing.isPresent()) {
-            cart = existing.get();
-            cart.setQuantity(cart.getQuantity() + 1);
-        } else {
-            cart = new Cart();
-            cart.setUser(user);
-            cart.setItems(item);
-            cart.setQuantity(1);
+    @Transactional
+    public ResponseEntity<UserCartSummaryDto> addItemToCart(int userId, int itemId, int quantityToAdd) {
+        if (quantityToAdd <= 0) {
+            throw new ResponseStatusException(BAD_REQUEST, "quantity must be >= 1");
         }
 
-        return ResponseEntity.ok(cartRepo.save(cart));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found with id: " + userId));
+        Item item = itemRepo.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Item not found with id: " + itemId));
+
+        Cart cart = cartRepo.findByUser_IdAndItem_Id(userId, itemId)
+                .orElseGet(() -> {
+                    Cart c = new Cart();
+                    c.setUser(user);
+                    c.setItem(item);
+                    c.setQuantity(0);
+                    return c;
+                });
+
+        cart.setQuantity(cart.getQuantity() + quantityToAdd);
+        cartRepo.save(cart);
+        return getCartSummaryByUserId(userId);
     }
+
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
-    /** Returns every cart entry in the system. */
-    public List<Cart> getAllCarts() {
-        return cartRepo.findAll();
+    /** Returns a cart summary for every user that has at least one item in their cart. */
+    public List<UserCartSummaryDto> getAllCartSummaries() {
+        Map<User, List<Cart>> byUser = cartRepo.findAll().stream()
+                .collect(Collectors.groupingBy(Cart::getUser));
+
+        return byUser.entrySet().stream().map(entry -> {
+            User user = entry.getKey();
+            List<Cart> entries = entry.getValue();
+
+            UserCartSummaryDto summary = new UserCartSummaryDto();
+            summary.setUserId(user.getId());
+            summary.setUsername(user.getUsername());
+            summary.setEmail(user.getEmail());
+
+            double total = 0.0;
+            for (Cart cartEntry : entries) {
+                Item item = cartEntry.getItem();
+                int quantity = cartEntry.getQuantity();
+                double price = item.getPrice() != null ? item.getPrice() : 0.0;
+
+                summary.getItems().add(new CartItemSummaryDto(
+                        item.getId(),
+                        item.getItemName(),
+                        item.getConsole(),
+                        item.getGenre(),
+                        price,
+                        quantity
+                ));
+                total += price * quantity;
+            }
+
+            summary.setTotal(total);
+            return summary;
+        }).collect(Collectors.toList());
     }
 
-    /** Returns a single cart entry by its own ID, or 404 if not found. */
-    public ResponseEntity<Cart> getCartById(int cartId) {
-        return cartRepo.findById(cartId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserCartSummaryDto> getCartSummaryByUserId(int userId) {
+        List<Cart> userCart = cartRepo.findByUser_Id(userId);
+
+        // Prefer returning an empty cart rather than 404 if user exists.
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found with id: " + userId));
+
+        UserCartSummaryDto summary = new UserCartSummaryDto();
+        summary.setUserId(user.getId());
+        summary.setUsername(user.getUsername());
+        summary.setEmail(user.getEmail());
+
+        double total = 0.0;
+        for (Cart entry : userCart) {
+            Item item = entry.getItem();
+            int quantity = entry.getQuantity();
+            double price = item.getPrice() != null ? item.getPrice() : 0.0;
+
+            summary.getItems().add(new CartItemSummaryDto(
+                    item.getId(),
+                    item.getItemName(),
+                    item.getConsole(),
+                    item.getGenre(),
+                    price,
+                    quantity
+            ));
+
+            total += price * quantity;
+        }
+
+        summary.setTotal(total);
+        return ResponseEntity.ok(summary);
     }
 
-    /** Returns all cart entries belonging to a specific user. */
-    public List<Cart> getCartByUserId(int userId) {
-        return cartRepo.findByUserId(userId);
-    }
 
     // ── Update ────────────────────────────────────────────────────────────────
 
@@ -91,12 +154,23 @@ public class CartServices {
      * Returns the updated cart entry, or 404 if not found.
      */
     public ResponseEntity<Cart> updateCartQuantity(int cartId, int quantity) {
-        return cartRepo.findById(cartId)
-                .map(cart -> {
-                    cart.setQuantity(quantity);
-                    return ResponseEntity.ok(cartRepo.save(cart));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        if (quantity < 0) {
+            throw new ResponseStatusException(BAD_REQUEST, "quantity must be >= 0");
+        }
+
+        Optional<Cart> found = cartRepo.findById(cartId);
+        if (found.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Cart cart = found.get();
+        if (quantity == 0) {
+            cartRepo.delete(cart);
+            return ResponseEntity.noContent().build();
+        }
+
+        cart.setQuantity(quantity);
+        return ResponseEntity.ok(cartRepo.save(cart));
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
@@ -112,7 +186,7 @@ public class CartServices {
 
     /** Clears all cart entries for a given user (empties their basket). Returns 404 if no entries exist. */
     public ResponseEntity<Void> clearCartByUserId(int userId) {
-        List<Cart> userCart = cartRepo.findByUserId(userId);
+        List<Cart> userCart = cartRepo.findByUser_Id(userId);
         if (userCart.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -120,18 +194,12 @@ public class CartServices {
         return ResponseEntity.noContent().build();
     }
 
-    // ── Item Helpers ──────────────────────────────────────────────────────────
-
-    /**
-     * Removes a specific item from a user's cart.
+    /** Removes a specific item from a user's cart.
      * Finds and deletes the cart entry matching the given user and item.
      * Returns 404 if no matching entry is found.
      */
     public ResponseEntity<Void> removeItemFromCart(int userId, int itemId) {
-        Optional<Cart> cartEntry = cartRepo.findByUserId(userId)
-                .stream()
-                .filter(c -> c.getItems().getId().equals(itemId))
-                .findFirst();
+        Optional<Cart> cartEntry = cartRepo.findByUser_IdAndItem_Id(userId, itemId);
 
         if (cartEntry.isEmpty()) {
             return ResponseEntity.notFound().build();

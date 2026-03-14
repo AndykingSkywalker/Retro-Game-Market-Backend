@@ -1,6 +1,9 @@
 package org.example.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 /**
@@ -17,11 +20,18 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @NotBlank(message = "username is required")
     private String username;
+
+    @Email(message = "email must be valid")
+    @NotBlank(message = "email is required")
     private String email;
+
+    @JsonIgnore
     private String password;
 
     /** One user can have many cart entries. Cascade ensures cart rows are removed with the user. */
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Cart> cart;
 

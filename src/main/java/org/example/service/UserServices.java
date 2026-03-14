@@ -5,9 +5,15 @@ import java.util.Optional;
 
 import org.example.domain.User;
 import org.example.repo.UserRepo;
+import org.example.rest.dto.UserCreateRequestDto;
+import org.example.rest.dto.UserResponseDto;
+import org.example.rest.dto.UserUpdateRequestDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.springframework.http.HttpStatus.*;
 
 /**
  * Service layer for User operations.
@@ -16,55 +22,62 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserServices {
 
-    // ── Dependencies ──────────────────────────────────────────────────────────
-
     private final UserRepo repo;
 
     public UserServices(UserRepo repo) {
-        super();
         this.repo = repo;
+    }
+
+    private static UserResponseDto toDto(User user) {
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail());
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
 
-    /** Persists a new user and returns it with a 201 CREATED status. */
-    public ResponseEntity<User> createUser(User newUser) {
-        User created = this.repo.save(newUser);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    public ResponseEntity<UserResponseDto> createUser(UserCreateRequestDto newUser) {
+        // Basic uniqueness check on username (best enforced with a DB unique index as well)
+        if (repo.findByUsername(newUser.getUsername()).isPresent()) {
+            throw new ResponseStatusException(CONFLICT, "username already exists");
+        }
+
+        User created = new User();
+        created.setUsername(newUser.getUsername());
+        created.setEmail(newUser.getEmail());
+        created.setPassword(newUser.getPassword());
+
+        User saved = this.repo.save(created);
+        return new ResponseEntity<>(toDto(saved), HttpStatus.CREATED);
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
-    /** Returns all registered users. */
-    public List<User> getUsers() {
-        return this.repo.findAll();
+    public List<UserResponseDto> getUsers() {
+        return this.repo.findAll().stream().map(UserServices::toDto).toList();
     }
 
-    /** Returns a single user by ID, or 404 if not found. */
-    public ResponseEntity<User> getUser(int id) {
+    public ResponseEntity<UserResponseDto> getUser(int id) {
         Optional<User> found = this.repo.findById(id);
         if (found.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(NOT_FOUND);
         }
-        return ResponseEntity.ok(found.get());
+        return ResponseEntity.ok(toDto(found.get()));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
 
-    /**
-     * Partially updates a user by ID.
-     * Only fields that are non-null are applied, allowing partial updates.
-     * Returns the updated user, or 404 if not found.
-     */
-    public ResponseEntity<User> updateUser(int id, User userDetails) {
+    public ResponseEntity<UserResponseDto> updateUser(int id, UserUpdateRequestDto userDetails) {
         Optional<User> found = this.repo.findById(id);
         if (found.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(NOT_FOUND);
         }
 
         User exists = found.get();
 
         if (userDetails.getUsername() != null) {
+            // if changing username, ensure it's not taken
+            repo.findByUsername(userDetails.getUsername())
+                    .filter(u -> u.getId() != id)
+                    .ifPresent(u -> { throw new ResponseStatusException(CONFLICT, "username already exists"); });
             exists.setUsername(userDetails.getUsername());
         }
         if (userDetails.getEmail() != null) {
@@ -74,12 +87,11 @@ public class UserServices {
             exists.setPassword(userDetails.getPassword());
         }
 
-        return ResponseEntity.ok(this.repo.save(exists));
+        return ResponseEntity.ok(toDto(this.repo.save(exists)));
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
 
-    /** Deletes a user by ID. Returns 204 NO CONTENT on success, 404 if not found. */
     public ResponseEntity<Void> deleteUser(int id) {
         if (!this.repo.existsById(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

@@ -2,8 +2,12 @@ package org.example.rest;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.example.domain.Cart;
+import org.example.rest.dto.CartAddItemRequestDto;
+import org.example.rest.dto.CartUpdateQuantityRequestDto;
 import org.example.service.CartServices;
+import org.example.rest.dto.UserCartSummaryDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,40 +30,39 @@ public class CartController {
 
     // ── Create ────────────────────────────────────────────────────────────────
 
-    /** POST /api/carts/user/{userId}/item/{itemId} - Adds an item to a user's cart, or increments quantity if already present. */
-    @PostMapping("/user/{userId}/item/{itemId}")
-    public ResponseEntity<Cart> addItemToCart(@PathVariable int userId,
-                                              @PathVariable int itemId) {
-        return cartServices.addItemToCart(userId, itemId);
+    /**
+     * POST /api/carts/users/{userId}/items - Adds an item to a user's cart.
+     * Body: { itemId, quantity }
+     * Returns the full updated cart summary for the user.
+     */
+    @PostMapping("/users/{userId}/items")
+    public ResponseEntity<UserCartSummaryDto> addItemToCart(@PathVariable int userId,
+                                                            @Valid @RequestBody CartAddItemRequestDto request) {
+        return cartServices.addItemToCart(userId, request.getItemId(), request.getQuantity());
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
-    /** GET /api/carts - Returns all cart entries in the system. */
+    /** GET /api/carts - Returns a cart summary for every user that has items in their cart. */
     @GetMapping
-    public List<Cart> getAllCarts() {
-        return cartServices.getAllCarts();
+    public List<UserCartSummaryDto> getAllCartSummaries() {
+        return cartServices.getAllCartSummaries();
     }
 
-    /** GET /api/carts/{cartId} - Returns a single cart entry by its ID. */
-    @GetMapping("/{cartId}")
-    public ResponseEntity<Cart> getCartById(@PathVariable int cartId) {
-        return cartServices.getCartById(cartId);
+    /** GET /api/carts/users/{userId} - Returns the user with their full cart and running total. */
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserCartSummaryDto> getCartByUserId(@PathVariable int userId) {
+        return cartServices.getCartSummaryByUserId(userId);
     }
 
-    /** GET /api/carts/user/{userId} - Returns all cart entries for a given user. */
-    @GetMapping("/user/{userId}")
-    public List<Cart> getCartByUserId(@PathVariable int userId) {
-        return cartServices.getCartByUserId(userId);
-    }
-
-    // ── Update ────────────────────────────────────────────────────────────────
-
-    /** PUT /api/carts/{cartId}/quantity/{quantity} - Updates the quantity on a specific cart entry. */
-    @PutMapping("/{cartId}/quantity/{quantity}")
+    /**
+     * PUT /api/carts/{cartId} - Updates quantity on a specific cart entry.
+     * Body: { quantity }
+     */
+    @PutMapping("/{cartId}")
     public ResponseEntity<Cart> updateCartQuantity(@PathVariable int cartId,
-                                                   @PathVariable int quantity) {
-        return cartServices.updateCartQuantity(cartId, quantity);
+                                                   @Valid @RequestBody CartUpdateQuantityRequestDto request) {
+        return cartServices.updateCartQuantity(cartId, request.getQuantity());
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
@@ -70,16 +73,17 @@ public class CartController {
         return cartServices.deleteCart(cartId);
     }
 
-    /** DELETE /api/carts/user/{userId} - Clears all cart entries for a given user. */
-    @DeleteMapping("/user/{userId}")
+    /** DELETE /api/carts/users/{userId} - Clears all cart entries for a given user. */
+    @DeleteMapping("/users/{userId}")
     public ResponseEntity<Void> clearCartByUserId(@PathVariable int userId) {
         return cartServices.clearCartByUserId(userId);
     }
 
-    /** DELETE /api/carts/user/{userId}/item/{itemId} - Removes a specific item from a user's cart. */
-    @DeleteMapping("/user/{userId}/item/{itemId}")
+    /** DELETE /api/carts/users/{userId}/items/{itemId} - Removes a specific item from a user's cart. */
+    @DeleteMapping("/users/{userId}/items/{itemId}")
     public ResponseEntity<Void> removeItemFromCart(@PathVariable int userId,
                                                    @PathVariable int itemId) {
         return cartServices.removeItemFromCart(userId, itemId);
     }
+
 }

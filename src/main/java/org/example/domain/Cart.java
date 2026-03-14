@@ -1,6 +1,7 @@
 package org.example.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 
 /**
  * Represents a single line entry in a user's cart.
@@ -10,7 +11,8 @@ import jakarta.persistence.*;
  *   Cart (Many) --> (One) Item
  */
 @Entity
-@Table(name = "cart")
+@Table(name = "cart",
+        uniqueConstraints = @UniqueConstraint(name = "uk_cart_user_item", columnNames = {"user_id", "item_id"}))
 public class Cart {
 
     // ── Fields ────────────────────────────────────────────────────────────────
@@ -19,6 +21,7 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Min(value = 0, message = "quantity must be >= 0")
     private int quantity;
 
     /** Many cart entries can belong to one user. Foreign key: user_id. */
@@ -63,11 +66,11 @@ public class Cart {
         this.user = user;
     }
 
-    public Item getItems() {
+    public Item getItem() {
         return item;
     }
 
-    public void setItems(Item item) {
+    public void setItem(Item item) {
         this.item = item;
     }
 }
