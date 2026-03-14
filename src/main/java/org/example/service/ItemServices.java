@@ -79,6 +79,9 @@ public class ItemServices {
         if (itemDetails.getPrice() != null) {
             exists.setPrice(itemDetails.getPrice());
         }
+        if (itemDetails.getImageUrl() != null) {
+            exists.setImageUrl(itemDetails.getImageUrl());
+        }
         if (itemDetails.getOnSale() != null) {
             exists.setOnSale(itemDetails.getOnSale());
         }

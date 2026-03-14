@@ -36,3 +36,8 @@ build/
 
 ### Sensitive config - contains DB credentials, do not commit ###
 src/main/resources/application.properties
+/src/test/resources/application-test.properties
+
+
+### Environment variable files - do not commit ###
+.env

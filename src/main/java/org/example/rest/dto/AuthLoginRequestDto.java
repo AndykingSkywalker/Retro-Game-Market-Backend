@@ -1,21 +1,17 @@
 package org.example.rest.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public class UserCreateRequestDto {
+public class AuthLoginRequestDto {
 
-    @NotBlank
+    @NotBlank(message = "username is required")
     private String username;
 
-    @Email
-    @NotBlank
-    private String email;
-
-    @NotBlank
+    @NotBlank(message = "password is required")
     private String password;
 
-    public UserCreateRequestDto() {}
+    public AuthLoginRequestDto() {
+    }
 
     public String getUsername() {
         return username;
@@ -23,14 +19,6 @@ public class UserCreateRequestDto {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getPassword() {
@@ -41,3 +29,4 @@ public class UserCreateRequestDto {
         this.password = password;
     }
 }
+

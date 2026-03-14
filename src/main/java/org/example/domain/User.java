@@ -30,6 +30,10 @@ public class User {
     @JsonIgnore
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.CUSTOMER;
+
     /** One user can have many cart entries. Cascade ensures cart rows are removed with the user. */
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -73,6 +77,14 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public List<Cart> getCart() {

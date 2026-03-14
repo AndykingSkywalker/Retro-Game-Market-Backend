@@ -3,6 +3,7 @@ package org.example.rest;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.example.domain.Item;
 import org.example.service.ItemServices;
 import org.springframework.http.ResponseEntity;
@@ -37,12 +38,14 @@ public class ItemController {
 
     /** GET /api/items - Returns all items. */
     @GetMapping
+    @SecurityRequirements
     public List<Item> getItems() {
         return this.service.getItems();
     }
 
     /** GET /api/items/{id} - Returns a single item by ID. */
     @GetMapping("/{id}")
+    @SecurityRequirements
     public ResponseEntity<Item> getItem(@PathVariable int id) {
         return this.service.getItem(id);
     }

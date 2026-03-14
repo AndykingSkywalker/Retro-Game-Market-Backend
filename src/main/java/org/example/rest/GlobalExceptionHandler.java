@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.example.rest.dto.ApiErrorDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +34,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(dto, status);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorDto> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        ApiErrorDto dto = new ApiErrorDto(status.value(), status.getReasonPhrase(), ex.getMessage(), request.getRequestURI());
+        return new ResponseEntity<>(dto, status);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorDto> handleGeneric(Exception ex, HttpServletRequest request) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -40,4 +48,3 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(dto, status);
     }
 }
-

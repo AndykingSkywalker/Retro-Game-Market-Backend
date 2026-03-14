@@ -1,21 +1,22 @@
-package org.example.rest.dto;
+package org.example.security;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-public class UserCreateRequestDto {
+@ConfigurationProperties(prefix = "app.bootstrap.admin")
+public class AdminBootstrapProperties {
 
-    @NotBlank
+    private boolean enabled;
     private String username;
-
-    @Email
-    @NotBlank
     private String email;
-
-    @NotBlank
     private String password;
 
-    public UserCreateRequestDto() {}
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     public String getUsername() {
         return username;
@@ -41,3 +42,4 @@ public class UserCreateRequestDto {
         this.password = password;
     }
 }
+

@@ -30,6 +30,8 @@ public class Item {
     @PositiveOrZero(message = "price must be >= 0")
     private Double price;
 
+    private String imageUrl;
+
     private Boolean inStock;
     private Boolean onSale;
 
@@ -89,6 +91,14 @@ public class Item {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     /** Derived: true when stockLevel is greater than zero. Never stored separately. */
