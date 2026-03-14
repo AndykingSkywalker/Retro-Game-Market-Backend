@@ -3,9 +3,15 @@ package org.example.domain;
 import jakarta.persistence.*;
 import java.util.List;
 
+/**
+ * Represents a registered user of the Retro Game Market.
+ * A user can have many cart entries (one per item they have added).
+ */
 @Entity
 @Table(name = "users")
 public class User {
+
+    // ── Fields ────────────────────────────────────────────────────────────────
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,12 +21,17 @@ public class User {
     private String email;
     private String password;
 
+    /** One user can have many cart entries. Cascade ensures cart rows are removed with the user. */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Cart> cart;
+
+    // ── Constructor ───────────────────────────────────────────────────────────
 
     public User() {
         super();
     }
+
+    // ── Getters & Setters ─────────────────────────────────────────────────────
 
     public int getId() {
         return id;
@@ -62,5 +73,3 @@ public class User {
         this.cart = cart;
     }
 }
-
-

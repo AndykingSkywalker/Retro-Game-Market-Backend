@@ -9,46 +9,61 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service layer for Item operations.
+ * Handles all business logic for creating, reading, updating, and deleting items.
+ */
 @Service
 public class ItemServices {
-    private ItemRepo repo;
+
+    // ── Dependencies ──────────────────────────────────────────────────────────
+
+    private final ItemRepo repo;
 
     public ItemServices(ItemRepo repo) {
         super();
         this.repo = repo;
     }
 
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    /** Persists a new item and returns it with a 201 CREATED status. */
     public ResponseEntity<Item> createItem(Item newItem) {
         Item created = this.repo.save(newItem);
-        return new ResponseEntity<Item>(created, HttpStatus.CREATED);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
+    // ── Read ──────────────────────────────────────────────────────────────────
+
+    /** Returns all items in the catalogue. */
     public List<Item> getItems() {
         return this.repo.findAll();
     }
 
-    // Find items by ID
+    /** Returns a single item by ID, or 404 if not found. */
     public ResponseEntity<Item> getItem(int id) {
         Optional<Item> found = this.repo.findById(id);
-        // If the given ID is empty then returns status not found
         if (found.isEmpty()) {
-            return new ResponseEntity<Item>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        // If the given ID finds data then returns Item data
-        Item body = found.get();
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(found.get());
     }
 
-    // Update items by ID
+    // ── Update ────────────────────────────────────────────────────────────────
+
+    /**
+     * Partially updates an item by ID.
+     * Only fields that are non-null (and non-zero for numerics) are applied.
+     * Returns the updated item, or 404 if not found.
+     */
     public ResponseEntity<Item> updateItem(int id, Item itemDetails) {
         Optional<Item> found = this.repo.findById(id);
-        // If the given ID is empty then returns status not found
         if (found.isEmpty()) {
-            return new ResponseEntity<Item>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        // If the given ID finds data then returns Item data
+
         Item exists = found.get();
-        // If a field is not Null or 0 then set field input to XYZ
+
         if (itemDetails.getItemName() != null) {
             exists.setItemName(itemDetails.getItemName());
         }
@@ -58,10 +73,10 @@ public class ItemServices {
         if (itemDetails.getGenre() != null) {
             exists.setGenre(itemDetails.getGenre());
         }
-        if (itemDetails.getStockLevel() != 0) {
+        if (itemDetails.getStockLevel() != null && itemDetails.getStockLevel() != 0) {
             exists.setStockLevel(itemDetails.getStockLevel());
         }
-        if (itemDetails.getPrice() != 0) {
+        if (itemDetails.getPrice() != null && itemDetails.getPrice() != 0) {
             exists.setPrice(itemDetails.getPrice());
         }
         if (itemDetails.getInStock() != null) {
@@ -70,14 +85,18 @@ public class ItemServices {
         if (itemDetails.getOnSale() != null) {
             exists.setOnSale(itemDetails.getOnSale());
         }
-        // saves new data inside the fields and returns new data
-        Item updated = this.repo.save(exists);
-        return ResponseEntity.ok(updated);
+
+        return ResponseEntity.ok(this.repo.save(exists));
     }
 
-    // Remove item by ID
-    public boolean deleteItem(int id) {
+    // ── Delete ────────────────────────────────────────────────────────────────
+
+    /** Deletes an item by ID. Returns 204 NO CONTENT on success, 404 if not found. */
+    public ResponseEntity<Void> deleteItem(int id) {
+        if (!this.repo.existsById(id)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         this.repo.deleteById(id);
-        return !this.repo.existsById(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

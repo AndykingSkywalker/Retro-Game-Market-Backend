@@ -1,17 +1,21 @@
 package org.example.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
+/**
+ * Represents a retro game item available in the marketplace.
+ * Each item holds stock, pricing, and catalogue information.
+ */
 @Entity
+@Table(name = "item")
 public class Item {
 
+    // ── Fields ────────────────────────────────────────────────────────────────
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     private String itemName;
     private String console;
     private String genre;
@@ -21,10 +25,14 @@ public class Item {
     private Boolean onSale;
 
 
+    // ── Constructor ───────────────────────────────────────────────────────────
 
     public Item() {
         super();
     }
+
+
+    // ── Getters & Setters ─────────────────────────────────────────────────────
 
     public Integer getId() {
         return id;
