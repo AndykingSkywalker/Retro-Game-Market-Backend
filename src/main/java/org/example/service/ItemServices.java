@@ -5,9 +5,13 @@ import java.util.Optional;
 
 import org.example.domain.Item;
 import org.example.repo.ItemRepo;
+import org.example.rest.dto.ItemCreateRequestDto;
+import org.example.rest.dto.ItemResponseDto;
+import org.example.rest.dto.ItemUpdateRequestDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Service layer for Item operations.
@@ -28,35 +32,46 @@ public class ItemServices {
     // ── Create ────────────────────────────────────────────────────────────────
 
     /** Persists a new item and returns it with a 201 CREATED status. */
-    public ResponseEntity<Item> createItem(Item newItem) {
-        Item created = this.repo.save(newItem);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    public ResponseEntity<ItemResponseDto> createItem(ItemCreateRequestDto newItem) {
+        Item created = new Item();
+        created.setItemName(newItem.getItemName());
+        created.setConsole(newItem.getConsole());
+        created.setGenre(newItem.getGenre());
+        created.setStockLevel(newItem.getStockLevel());
+        created.setPrice(newItem.getPrice());
+        created.setImageUrl(newItem.getImageUrl());
+        created.setOnSale(newItem.getOnSale());
+        created.setSaleDiscountPercent(newItem.getSaleDiscountPercent());
+
+        validateSaleDiscountPercent(created.getSaleDiscountPercent());
+        Item saved = this.repo.save(created);
+        return new ResponseEntity<>(toDto(saved), HttpStatus.CREATED);
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
     /** Returns all items in the catalogue. */
-    public List<Item> getItems() {
-        return this.repo.findAll();
+    public List<ItemResponseDto> getItems() {
+        return this.repo.findAll().stream().map(ItemServices::toDto).toList();
     }
 
     /** Returns a single item by ID, or 404 if not found. */
-    public ResponseEntity<Item> getItem(int id) {
+    public ResponseEntity<ItemResponseDto> getItem(int id) {
         Optional<Item> found = this.repo.findById(id);
         if (found.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return ResponseEntity.ok(found.get());
+        return ResponseEntity.ok(toDto(found.get()));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
 
     /**
      * Partially updates an item by ID.
-     * Only fields that are non-null (and non-zero for numerics) are applied.
+     * Only fields that are non-null are applied.
      * Returns the updated item, or 404 if not found.
      */
-    public ResponseEntity<Item> updateItem(int id, Item itemDetails) {
+    public ResponseEntity<ItemResponseDto> updateItem(int id, ItemUpdateRequestDto itemDetails) {
         Optional<Item> found = this.repo.findById(id);
         if (found.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -85,8 +100,12 @@ public class ItemServices {
         if (itemDetails.getOnSale() != null) {
             exists.setOnSale(itemDetails.getOnSale());
         }
+        if (itemDetails.getSaleDiscountPercent() != null) {
+            validateSaleDiscountPercent(itemDetails.getSaleDiscountPercent());
+            exists.setSaleDiscountPercent(itemDetails.getSaleDiscountPercent());
+        }
 
-        return ResponseEntity.ok(this.repo.save(exists));
+        return ResponseEntity.ok(toDto(this.repo.save(exists)));
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
@@ -98,5 +117,29 @@ public class ItemServices {
         }
         this.repo.deleteById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    private static void validateSaleDiscountPercent(Double saleDiscountPercent) {
+        if (saleDiscountPercent == null) {
+            return;
+        }
+        if (saleDiscountPercent < 0.0 || saleDiscountPercent > 100.0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "saleDiscountPercent must be between 0 and 100");
+        }
+    }
+
+    private static ItemResponseDto toDto(Item item) {
+        return new ItemResponseDto(
+                item.getId(),
+                item.getItemName(),
+                item.getConsole(),
+                item.getGenre(),
+                item.getStockLevel(),
+                item.getPrice(),
+                item.getImageUrl(),
+                item.getInStock(),
+                item.getOnSale(),
+                item.getSaleDiscountPercent()
+        );
     }
 }

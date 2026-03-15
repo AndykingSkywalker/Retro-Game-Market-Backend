@@ -38,7 +38,13 @@ public class UserServices {
     }
 
     private static UserResponseDto toDto(User user) {
-        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
+        return new UserResponseDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getProfilePicture(),
+                user.getRole()
+        );
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -53,6 +59,7 @@ public class UserServices {
         created.setUsername(newUser.getUsername());
         created.setEmail(newUser.getEmail());
         created.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        created.setProfilePicture(normalizeProfilePictureForStorage(newUser.getProfilePicture()));
         created.setRole(UserRole.CUSTOMER);
 
         User saved = this.repo.save(created);
@@ -128,6 +135,9 @@ public class UserServices {
         if (userDetails.getPassword() != null) {
             exists.setPassword(passwordEncoder.encode(userDetails.getPassword()));
         }
+        if (userDetails.getProfilePicture() != null) {
+            exists.setProfilePicture(normalizeProfilePictureForStorage(userDetails.getProfilePicture()));
+        }
 
         return ResponseEntity.ok(toDto(this.repo.save(exists)));
     }
@@ -162,5 +172,13 @@ public class UserServices {
         }
         this.repo.deleteById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    private static String normalizeProfilePictureForStorage(String profilePicture) {
+        if (profilePicture == null) {
+            return null;
+        }
+        String trimmed = profilePicture.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

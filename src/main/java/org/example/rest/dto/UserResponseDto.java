@@ -6,14 +6,16 @@ public class UserResponseDto {
     private int id;
     private String username;
     private String email;
+    private String profilePicture;
     private UserRole role;
 
     public UserResponseDto() {}
 
-    public UserResponseDto(int id, String username, String email, UserRole role) {
+    public UserResponseDto(int id, String username, String email, String profilePicture, UserRole role) {
         this.id = id;
         this.username = username;
         this.email = email;
+        this.profilePicture = profilePicture;
         this.role = role;
     }
 
@@ -39,6 +41,14 @@ public class UserResponseDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 
     public UserRole getRole() {

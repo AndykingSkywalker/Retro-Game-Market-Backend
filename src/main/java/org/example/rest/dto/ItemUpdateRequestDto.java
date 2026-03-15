@@ -1,28 +1,12 @@
-package org.example.domain;
+package org.example.rest.dto;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 
-/**
- * Represents a retro game item available in the marketplace.
- * Each item holds stock, pricing, and catalogue information.
- */
-@Entity
-@Table(name = "item")
-public class Item {
+public class ItemUpdateRequestDto {
 
-    // ── Fields ────────────────────────────────────────────────────────────────
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    @NotBlank(message = "itemName is required")
     private String itemName;
-
     private String console;
     private String genre;
 
@@ -33,30 +17,13 @@ public class Item {
     private Double price;
 
     private String imageUrl;
-
-    private Boolean inStock;
     private Boolean onSale;
 
     @DecimalMin(value = "0.0", message = "saleDiscountPercent must be between 0 and 100")
     @DecimalMax(value = "100.0", message = "saleDiscountPercent must be between 0 and 100")
     private Double saleDiscountPercent;
 
-
-    // ── Constructor ───────────────────────────────────────────────────────────
-
-    public Item() {
-        super();
-    }
-
-
-    // ── Getters & Setters ─────────────────────────────────────────────────────
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
+    public ItemUpdateRequestDto() {
     }
 
     public String getItemName() {
@@ -107,12 +74,6 @@ public class Item {
         this.imageUrl = imageUrl;
     }
 
-    /** Derived: true when stockLevel is greater than zero. Never stored separately. */
-    @Transient
-    public Boolean getInStock() {
-        return stockLevel != null && stockLevel > 0;
-    }
-
     public Boolean getOnSale() {
         return onSale;
     }
@@ -129,3 +90,4 @@ public class Item {
         this.saleDiscountPercent = saleDiscountPercent;
     }
 }
+

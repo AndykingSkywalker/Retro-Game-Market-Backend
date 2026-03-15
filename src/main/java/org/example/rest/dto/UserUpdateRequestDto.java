@@ -1,6 +1,8 @@
 package org.example.rest.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class UserUpdateRequestDto {
     private String username;
@@ -10,6 +12,10 @@ public class UserUpdateRequestDto {
 
     /** Optional; if present will overwrite existing password. */
     private String password;
+
+    @Size(max = 2048)
+    @Pattern(regexp = "^(https?://.+)?$", message = "profilePicture must be a valid http/https URL")
+    private String profilePicture;
 
     public UserUpdateRequestDto() {}
 
@@ -35,6 +41,14 @@ public class UserUpdateRequestDto {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }
 

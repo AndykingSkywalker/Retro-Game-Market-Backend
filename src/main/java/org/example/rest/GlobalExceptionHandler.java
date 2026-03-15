@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.stream.Collectors;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorDto> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         HttpStatus status = HttpStatus.FORBIDDEN;
+        ApiErrorDto dto = new ApiErrorDto(status.value(), status.getReasonPhrase(), ex.getMessage(), request.getRequestURI());
+        return new ResponseEntity<>(dto, status);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorDto> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
         ApiErrorDto dto = new ApiErrorDto(status.value(), status.getReasonPhrase(), ex.getMessage(), request.getRequestURI());
         return new ResponseEntity<>(dto, status);
     }
