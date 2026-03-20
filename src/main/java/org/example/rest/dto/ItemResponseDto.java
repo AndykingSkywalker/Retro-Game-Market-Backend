@@ -12,6 +12,7 @@ public class ItemResponseDto {
     private Boolean inStock;
     private Boolean onSale;
     private Double saleDiscountPercent;
+    private Boolean isWishlisted;
 
     public ItemResponseDto() {
     }
@@ -26,7 +27,8 @@ public class ItemResponseDto {
             String imageUrl,
             Boolean inStock,
             Boolean onSale,
-            Double saleDiscountPercent
+            Double saleDiscountPercent,
+            Boolean isWishlisted
     ) {
         this.id = id;
         this.itemName = itemName;
@@ -38,6 +40,7 @@ public class ItemResponseDto {
         this.inStock = inStock;
         this.onSale = onSale;
         this.saleDiscountPercent = saleDiscountPercent;
+        this.isWishlisted = isWishlisted;
     }
 
     public Integer getId() {
@@ -118,6 +121,14 @@ public class ItemResponseDto {
 
     public void setSaleDiscountPercent(Double saleDiscountPercent) {
         this.saleDiscountPercent = saleDiscountPercent;
+    }
+
+    public Boolean getIsWishlisted() {
+        return isWishlisted;
+    }
+
+    public void setIsWishlisted(Boolean isWishlisted) {
+        this.isWishlisted = isWishlisted;
     }
 }
 

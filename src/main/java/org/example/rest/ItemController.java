@@ -9,6 +9,7 @@ import org.example.rest.dto.ItemResponseDto;
 import org.example.rest.dto.ItemUpdateRequestDto;
 import org.example.service.ItemServices;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -41,15 +42,15 @@ public class ItemController {
     /** GET /api/items - Returns all items. */
     @GetMapping
     @SecurityRequirements
-    public List<ItemResponseDto> getItems() {
-        return this.service.getItems();
+    public List<ItemResponseDto> getItems(Authentication authentication) {
+        return this.service.getItems(authentication);
     }
 
     /** GET /api/items/{id} - Returns a single item by ID. */
     @GetMapping("/{id}")
     @SecurityRequirements
-    public ResponseEntity<ItemResponseDto> getItem(@PathVariable int id) {
-        return this.service.getItem(id);
+    public ResponseEntity<ItemResponseDto> getItem(@PathVariable int id, Authentication authentication) {
+        return this.service.getItem(id, authentication);
     }
 
     // ── Update ────────────────────────────────────────────────────────────────

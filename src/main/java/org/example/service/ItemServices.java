@@ -2,14 +2,20 @@ package org.example.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.example.domain.Item;
+import org.example.domain.User;
+import org.example.repo.UserRepo;
+import org.example.repo.WishlistRepo;
 import org.example.repo.ItemRepo;
 import org.example.rest.dto.ItemCreateRequestDto;
 import org.example.rest.dto.ItemResponseDto;
 import org.example.rest.dto.ItemUpdateRequestDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,10 +29,14 @@ public class ItemServices {
     // ── Dependencies ──────────────────────────────────────────────────────────
 
     private final ItemRepo repo;
+    private final UserRepo userRepo;
+    private final WishlistRepo wishlistRepo;
 
-    public ItemServices(ItemRepo repo) {
+    public ItemServices(ItemRepo repo, UserRepo userRepo, WishlistRepo wishlistRepo) {
         super();
         this.repo = repo;
+        this.userRepo = userRepo;
+        this.wishlistRepo = wishlistRepo;
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -45,23 +55,44 @@ public class ItemServices {
 
         validateSaleDiscountPercent(created.getSaleDiscountPercent());
         Item saved = this.repo.save(created);
-        return new ResponseEntity<>(toDto(saved), HttpStatus.CREATED);
+        return new ResponseEntity<>(toDto(saved, false), HttpStatus.CREATED);
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
     /** Returns all items in the catalogue. */
-    public List<ItemResponseDto> getItems() {
-        return this.repo.findAll().stream().map(ItemServices::toDto).toList();
+    public List<ItemResponseDto> getItems(Authentication authentication) {
+        List<Item> items = this.repo.findAll();
+        Optional<Integer> maybeUserId = resolveAuthenticatedUserId(authentication);
+        if (maybeUserId.isEmpty()) {
+            return items.stream().map(item -> toDto(item, false)).toList();
+        }
+        if (items.isEmpty()) {
+            return List.of();
+        }
+
+        List<Integer> itemIds = items.stream().map(Item::getId).toList();
+        Set<Integer> wishedItemIds = wishlistRepo.findByUser_IdAndItem_IdIn(maybeUserId.get(), itemIds)
+                .stream()
+                .map(wishlist -> wishlist.getItem().getId())
+                .collect(Collectors.toSet());
+
+        return items.stream()
+                .map(item -> toDto(item, wishedItemIds.contains(item.getId())))
+                .toList();
     }
 
     /** Returns a single item by ID, or 404 if not found. */
-    public ResponseEntity<ItemResponseDto> getItem(int id) {
+    public ResponseEntity<ItemResponseDto> getItem(int id, Authentication authentication) {
         Optional<Item> found = this.repo.findById(id);
         if (found.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return ResponseEntity.ok(toDto(found.get()));
+
+        boolean isWishlisted = resolveAuthenticatedUserId(authentication)
+                .map(userId -> wishlistRepo.findByUser_IdAndItem_Id(userId, id).isPresent())
+                .orElse(false);
+        return ResponseEntity.ok(toDto(found.get(), isWishlisted));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -105,7 +136,7 @@ public class ItemServices {
             exists.setSaleDiscountPercent(itemDetails.getSaleDiscountPercent());
         }
 
-        return ResponseEntity.ok(toDto(this.repo.save(exists)));
+        return ResponseEntity.ok(toDto(this.repo.save(exists), false));
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
@@ -128,7 +159,20 @@ public class ItemServices {
         }
     }
 
-    private static ItemResponseDto toDto(Item item) {
+    private Optional<Integer> resolveAuthenticatedUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.empty();
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof String username) || "anonymousUser".equals(username)) {
+            return Optional.empty();
+        }
+
+        return userRepo.findByUsername(username).map(User::getId);
+    }
+
+    private static ItemResponseDto toDto(Item item, boolean isWishlisted) {
         return new ItemResponseDto(
                 item.getId(),
                 item.getItemName(),
@@ -139,7 +183,8 @@ public class ItemServices {
                 item.getImageUrl(),
                 item.getInStock(),
                 item.getOnSale(),
-                item.getSaleDiscountPercent()
+                item.getSaleDiscountPercent(),
+                isWishlisted
         );
     }
 }
