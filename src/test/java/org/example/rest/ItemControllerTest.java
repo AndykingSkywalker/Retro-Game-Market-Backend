@@ -1,6 +1,3 @@
-        String body = result.getResponse().getContentAsString();
-        return body.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
-                        .content("{\"username\":\"test-admin\",\"password\":\"secret123\"}"))
 package org.example.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,13 +8,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -88,6 +86,8 @@ class ItemControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"itemName\":\"Donkey Kong Country\",\"console\":\"SNES\",\"genre\":\"Platformer\",\"stockLevel\":8,\"price\":39.99,\"onSale\":true,\"saleDiscountPercent\":120}"))
                 .andExpect(status().isBadRequest());
+    }
+
     @Test
     void getItem_anonymousDefaultsIsWishlistedFalse() throws Exception {
         String adminToken = registerAndLogin();
@@ -193,20 +193,19 @@ class ItemControllerTest {
         return new RegisteredUser(id, token);
     }
 
-    }
+    private String registerAndLogin() throws Exception {
         return login("test-admin", "secret123");
     }
 
     private String login(String username, String password) throws Exception {
-
-    private String registerAndLogin() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", username,
                                 "password", password
                         ))))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"test-admin\",\"password\":\"secret123\"}"))
                 .andExpect(status().isOk())
+                .andReturn();
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
         return body.get("token").asText();
     }
@@ -221,7 +220,5 @@ class ItemControllerTest {
     }
 
     private record RegisteredUser(int id, String token) {
-        String body = result.getResponse().getContentAsString();
-        return body.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
     }
 }
