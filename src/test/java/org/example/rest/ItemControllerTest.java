@@ -198,7 +198,7 @@ class ItemControllerTest {
     }
 
     private String login(String username, String password) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/users/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", username,

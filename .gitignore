@@ -41,3 +41,4 @@ src/main/resources/application.properties
 
 ### Environment variable files - do not commit ###
 .env
+/src/main/resources/META-INF/
