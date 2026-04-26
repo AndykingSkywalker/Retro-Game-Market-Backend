@@ -1,0 +1,47 @@
+pipeline:
+  name: Retro-Game-Market-Backend
+  identifier: RetroGameMarketBackend
+  projectIdentifier: retrogamemarket
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: mygithubconnector
+        repoName: Retro-Game-Market-Backend
+        build: <+input>
+  stages:
+    - stage:
+        name: Maven Build
+        identifier: Maven_Build
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            override: true
+          buildIntelligence:
+            enabled: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Docker
+            spec:
+              harnessImageConnectorRef: account.harnessImage
+          execution:
+            steps:
+              - step:
+                  type: Gitleaks
+                  name: Gitleaks_1
+                  identifier: Gitleaks_1
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: repository
+                      detection: auto
+                    advanced:
+                      log:
+                        level: info
