@@ -21,8 +21,9 @@ pipeline:
             os: Linux
             arch: Amd64
           runtime:
-            type: Cloud
-            spec: {}
+            type: Docker
+            spec:
+              harnessImageConnectorRef: account.harnessImage
           execution:
             steps:
               - step:
