@@ -45,3 +45,5 @@ pipeline:
                     advanced:
                       log:
                         level: info
+        delegateSelectors:
+          - docker-delegate
